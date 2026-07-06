@@ -40,64 +40,18 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 90
 
-  build_ios:
-    name: Build iOS IPA
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build iOS
-        run: >
-          flutter build ios --release
-          --build-name=${{ env.BUILD_NAME }}
-          --build-number=${{ env.BUILD_NUMBER }}
-          --no-codesign
-
-      - name: Archive and export IPA
-        run: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -archivePath build/Runner.xcarchive \
-            archive
-          xcodebuild -exportArchive \
-            -archivePath build/Runner.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist ExportOptions.plist \
-            -allowProvisioningUpdates || \
-            echo "IPA export failed — check code signing setup"
-
-      - name: Upload iOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-ipa
-          path: ios/build/ipa/*.ipa
-          retention-days: 90
-          if-no-files-found: ignore
-
   create_release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build_android, build_ios]
+    needs: [build_android]
     permissions:
       contents: write
 
     steps:
-      - name: Download all artifacts
+      - name: Download APK
         uses: actions/download-artifact@v4
-
-      - name: List artifacts
-        run: ls -R
+        with:
+          name: android-apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -109,14 +63,8 @@ jobs:
 
             Automated build from commit ${{ github.sha }}
 
-            ### Downloads
-            - **Android**: `app-release.apk` (install directly)
-            - **iOS**: `Runner.ipa` (requires sideloading or Apple Developer signing)
-
-            ### Notes
-            - iOS builds require a valid Apple Developer account and code signing certificates to install on devices.
-          files: |
-            android-apk/app-release.apk
-            ios-ipa/*.ipa
+            ### Download
+            - **Android APK**: install directly on your device
+          files: app-release.apk
           draft: false
           prerelease: true
