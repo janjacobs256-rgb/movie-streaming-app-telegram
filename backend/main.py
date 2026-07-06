@@ -21,8 +21,9 @@ CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-if not all([API_ID, API_HASH, BOT_TOKEN, CHANNEL_ID, SUPABASE_URL, SUPABASE_KEY]):
-    logger.warning("Some environment variables are missing! Please check your .env file.")
+missing = [k for k, v in [("TELEGRAM_API_ID", API_ID), ("TELEGRAM_API_HASH", API_HASH), ("TELEGRAM_BOT_TOKEN", BOT_TOKEN), ("TELEGRAM_CHANNEL_ID", CHANNEL_ID), ("SUPABASE_URL", SUPABASE_URL), ("SUPABASE_KEY", SUPABASE_KEY)] if not v]
+if missing:
+    logger.warning(f"Missing env vars: {', '.join(missing)}")
 
 try:
     API_ID = int(API_ID) if API_ID else None
